@@ -6,13 +6,16 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(caret)
+library(ggplot2)
+library(lattice)
+library(randomForest)
 source("src/data_cleaning.R")
 source("src/feature_engineering.R")
 source("src/predict_values.R")
 source("src/train_model.R")
-library(tidyverse)
-library(caret)
-library(randomForest)
+
 ```
 
 # Data Preparation
@@ -64,14 +67,14 @@ test_set <- model_data[-train_idx, ]
 ## Train Models
 ```{r train-models}
 # Linear Regression
-lm_model <- train_model(train_set, method = "lm")
+lm_model <- train_lm_model(train_set)
 
 # Random Forest
-rf_model <- train_model(train_set, method = "rf", ntree = 35)
+rf_model <- train_rf_model(train_set)
 
 # Compare model performance
-lm_perf <- evaluate_model(lm_model, test_set)
-rf_perf <- evaluate_model(rf_model, test_set)
+lm_perf <- evaluate_lm_model(lm_model, test_set)
+rf_perf <- evaluate_rf_model(rf_model, test_set)
 
 results <- tibble(
   Model = c("Linear Regression", "Random Forest"),
@@ -98,10 +101,13 @@ ggplot(head(var_imp, 10), aes(x = reorder(Variable, `%IncMSE`), y = `%IncMSE`)) 
 
 # Final Predictions
 ```{r predictions}
-final_predictions <- predict_new_data(rf_model, predict_data_final) %>%
-  select(pid, predicted_price)
+predicted_price <- predict_new_data(rf_model, predict_data_final)
 
-knitr::kable(head(final_predictions, 10), caption = "Sample Predictions")
+# Display a preview of the prediction results
+final_predict <- select(predict_data, "pid")
+final_predict$assessed_value <- predicted_price
+knitr::kable(head(final_predict), caption = "Sample Predictions")
 
-write_csv(final_predictions, "property_price_predictions.csv")
+# Save predictions to a CSV file
+write_csv(final_predict, "property_price_predictions.csv")
 ```

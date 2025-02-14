@@ -1,7 +1,6 @@
 predict_new_data <- function(model, new_data, target = "sale_price") {
   # Create dummy variables
-  dummy_formula <- reformulate(".", target)
-  mm_new <- model.matrix(dummy_formula, new_data)[,-1]
+  mm_new <- model.matrix(~ ., data = new_data)[, -1]
 
   # Align columns with training data
   train_cols <- rownames(model$importance)
@@ -11,6 +10,5 @@ predict_new_data <- function(model, new_data, target = "sale_price") {
   mm_new <- mm_new[, train_cols]
 
   predictions <- predict(model, mm_new)
-  new_data$predicted_price <- predictions
-  return(new_data)
+  return(predictions)
 }

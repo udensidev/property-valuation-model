@@ -16,8 +16,23 @@ train_rf_model <- function(train_data) {
 }
 
 # Function to evaluate model performance
-evaluate_model <- function(model, test_data) {
-  predictions <- predict(model, newdata = test_data)
-  rmse <- sqrt(mean((test_data$sale_price - predictions)^2))
-  return(list(predictions = predictions, rmse = rmse))
+evaluate_lm_model <- function(model, test_data, target = "sale_price") {
+  preds <- predict(model, test_data)
+  
+  actual <- test_data[[target]]
+  rmse <- sqrt(mean((actual - preds)^2))
+  r2 <- 1 - (sum((actual - preds)^2) / sum((actual - mean(actual))^2))
+  
+  list(rmse = rmse, r2 = r2, predictions = preds)
+}
+
+evaluate_rf_model <- function(model, test_data, target = "sale_price") {
+  dummies_test <- model.matrix(sale_price ~ ., data = test_data)[, -1]
+  preds <- predict(model, dummies_test)
+  
+  actual <- test_data[[target]]
+  rmse <- sqrt(mean((actual - preds)^2))
+  r2 <- 1 - (sum((actual - preds)^2) / sum((actual - mean(actual))^2))
+  
+  list(rmse = rmse, r2 = r2, predictions = preds)
 }
