@@ -133,24 +133,4 @@ The **Random Forest model performed best**, capturing non-linear relationships a
 ## Future Improvements
 - **Model Optimization:** Tune hyperparameters for better accuracy.
 - **Feature Engineering:** Explore additional predictors.
-- **Data Expansion:** Incorporate external datasets for richer insights.
-- **Explainability:** Use SHAP values to interpret predictions.
-
----
-
-## Acknowledgments
-- Cook County Assessor’s Office (CCAO) for providing inspiration.
-- The data science community for open-source tools and methodologies.
-
----
-
-## License
-This project is licensed under the MIT License.
-
----
-
-### Contact
-For questions or collaboration, feel free to reach out!
-- **Email:** your.email@example.com
-- **GitHub:** [yourusername](https://github.com/yourusername)
 
