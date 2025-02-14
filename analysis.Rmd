@@ -109,5 +109,5 @@ final_predict$assessed_value <- predicted_price
 knitr::kable(head(final_predict), caption = "Sample Predictions")
 
 # Save predictions to a CSV file
-write_csv(final_predict, "property_price_predictions.csv")
+write_csv(final_predict, "results/property_price_predictions.csv")
 ```
