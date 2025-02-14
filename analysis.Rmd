@@ -1,0 +1,107 @@
+---
+title: "Property Value Prediction Report"
+author: "Mmesoma Udensi"     
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("src/data_cleaning.R")
+source("src/feature_engineering.R")
+source("src/predict_values.R")
+source("src/train_model.R")
+library(tidyverse)
+library(caret)
+library(randomForest)
+```
+
+# Data Preparation
+
+## Load Data
+```{r load-data}
+historic <- read_csv("data/historic_property_data.csv")
+predict_data <- read_csv("data/predict_property_data.csv")
+```
+
+## Clean Data
+```{r clean-data}
+# Clean both datasets
+historic_clean <- clean_data(historic, remove_cols = "ind_garage")
+predict_clean <- clean_data(predict_data, remove_cols = "ind_garage")
+
+# Verify cleaning
+glimpse(historic_clean)
+cat("\nMissing values in historic data:", sum(is.na(historic_clean)), "\n")
+cat("\nMissing values in prediction data:", sum(is.na(predict_clean)), "\n")
+```
+
+# Feature Selection
+```{r feature-selection}
+selected_features <- select_features(
+  historic_clean,
+  cor_threshold = 0.4,
+  anova_threshold = 0.05
+)
+
+cat("Selected features:\n")
+print(selected_features)
+
+# Create final datasets
+model_data <- historic_clean[, selected_features]
+predict_data_final <- predict_clean[, selected_features[selected_features != "sale_price"]]
+```
+
+# Model Training
+
+## Split Data
+```{r split-data}
+set.seed(123)
+train_idx <- createDataPartition(model_data$sale_price, p = 0.8, list = FALSE)
+train_set <- model_data[train_idx, ]
+test_set <- model_data[-train_idx, ]
+```
+
+## Train Models
+```{r train-models}
+# Linear Regression
+lm_model <- train_model(train_set, method = "lm")
+
+# Random Forest
+rf_model <- train_model(train_set, method = "rf", ntree = 35)
+
+# Compare model performance
+lm_perf <- evaluate_model(lm_model, test_set)
+rf_perf <- evaluate_model(rf_model, test_set)
+
+results <- tibble(
+  Model = c("Linear Regression", "Random Forest"),
+  RMSE = c(lm_perf$rmse, rf_perf$rmse),
+  R2 = c(lm_perf$r2, rf_perf$r2)
+)
+
+knitr::kable(results, caption = "Model Performance Comparison")
+```
+
+# Variable Importance
+```{r variable-importance}
+var_imp <- randomForest::importance(rf_model) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("Variable") %>%
+  arrange(desc(`%IncMSE`))
+
+ggplot(head(var_imp, 10), aes(x = reorder(Variable, `%IncMSE`), y = `%IncMSE`)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Top 10 Important Variables", x = "", y = "% Increase in MSE") +
+  theme_minimal()
+```
+
+# Final Predictions
+```{r predictions}
+final_predictions <- predict_new_data(rf_model, predict_data_final) %>%
+  select(pid, predicted_price)
+
+knitr::kable(head(final_predictions, 10), caption = "Sample Predictions")
+
+write_csv(final_predictions, "property_price_predictions.csv")
+```
